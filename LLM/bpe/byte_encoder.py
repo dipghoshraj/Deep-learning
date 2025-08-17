@@ -1,8 +1,4 @@
 
-import re
-import collections
-
-
 class ByteEncoder:
     def __init__(self):
         self.byte_encoder = self._bytes_to_unicode()
