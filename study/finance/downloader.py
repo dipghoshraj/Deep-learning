@@ -1,3 +1,22 @@
+# =============================================================================
+# DISCLAIMER
+# =============================================================================
+# For getting a public version of the signal software, please visit:
+#   👉 git@github.com:dipghoshraj/Deep-learning.git
+#
+# This notebook is a public version of the code and represents a **base version**
+# of the actual product.
+#
+# For access to:
+#   ✅ Full product
+#   ✅ Advanced features
+#   ✅ Complete signal software
+# Please contact:
+#   📧 dipghoshraj@gmail.com
+# =============================================================================
+
+
+
 import yfinance as yf
 import pandas as pd
 from datetime import datetime
