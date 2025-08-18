@@ -1,6 +1,6 @@
 import heapq
 from collections import defaultdict, Counter
-import json
+import json, os
 
 class FastBPETokenizer:
     def __init__(self):
@@ -136,9 +136,13 @@ class FastBPETokenizer:
         return text.strip()
     
     def save(self, path):
-        with open(f"{path}/vocab.json", "w") as f:
+        os.makedirs(path, exist_ok=True)
+        vocab_path = os.path.join(path, "vocab.json")
+        merges_path = os.path.join(path, "merges.json")
+
+        with open(vocab_path, "w") as f:
             json.dump(self.token_to_id, f)
-        with open(f"{path}/merges.json", "w") as f:
+        with open(merges_path, "w") as f:
             json.dump(self.merges, f)
 
     def load(self, path):
