@@ -7,6 +7,10 @@ class FastBPETokenizer:
         self.vocab = None
         self.merges = []
         self.merge_ranks = {}
+        self.token_to_id = {}
+        self.id_to_token = {}
+
+
 
     def get_vocab_from_corpus(self, corpus):
         """
@@ -97,6 +101,10 @@ class FastBPETokenizer:
         self.merge_ranks = {pair: i for i, pair in enumerate(merges)}
         self.vocab = tokens.union(set(a + b for a, b in merges))
 
+        self.token_to_id = {token: idx for idx, token in enumerate(sorted(self.vocab))}
+        self.id_to_token = {idx: token for token, idx in self.token_to_id.items()}
+
+
         print(f"Training done. Final vocab size={len(self.vocab)}")
 
 
@@ -117,3 +125,12 @@ class FastBPETokenizer:
 
     def tokenize(self, text):
         return [tok for word in text.split() for tok in self.tokenize_word(word)]
+    
+    def tokenize_to_ids(self, text):
+        tokens = self.tokenize(text)
+        return [self.token_to_id[tok] for tok in tokens if tok in self.token_to_id]
+    
+    def decode_from_ids(self, ids):
+        tokens = [self.id_to_token[i] for i in ids]
+        text = ''.join(tokens).replace('</w>', ' ')
+        return text.strip()
