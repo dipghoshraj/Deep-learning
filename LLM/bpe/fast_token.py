@@ -1,6 +1,6 @@
 import heapq
 from collections import defaultdict, Counter
-
+import json
 
 class FastBPETokenizer:
     def __init__(self):
@@ -134,3 +134,18 @@ class FastBPETokenizer:
         tokens = [self.id_to_token[i] for i in ids]
         text = ''.join(tokens).replace('</w>', ' ')
         return text.strip()
+    
+    def save(self, path):
+        with open(f"{path}/vocab.json", "w") as f:
+            json.dump(self.token_to_id, f)
+        with open(f"{path}/merges.json", "w") as f:
+            json.dump(self.merges, f)
+
+    def load(self, path):
+        with open(f"{path}/vocab.json", "r") as f:
+            self.token_to_id = json.load(f)
+            self.id_to_token = {v: k for k, v in self.token_to_id.items()}
+            self.vocab = set(self.token_to_id.keys())
+        with open(f"{path}/merges.json", "r") as f:
+            self.merges = [tuple(pair) for pair in json.load(f)]
+            self.merge_ranks = {pair: i for i, pair in enumerate(self.merges)}
