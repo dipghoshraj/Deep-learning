@@ -131,7 +131,7 @@ class FastBPETokenizer:
     def tokenize_to_ids(self, text):
         tokens = self.tokenize(text)
         ids = []
-        self.token_to_id.get("<bos>", None)  # Ensure <bos> is in vocab
+        ids.append(self.token_to_id.get("<bos>", None))  # Ensure <bos> is in vocab
         for token in tokens:
             if token in self.token_to_id:
                 ids.append(self.token_to_id[token])
