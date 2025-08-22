@@ -3,12 +3,14 @@ from collections import defaultdict, Counter
 import json, os
 
 class FastBPETokenizer:
-    def __init__(self):
+    def __init__(self, special_tokens=["<pad>", "<unk>", "<bos>", "<eos>"]):
         self.vocab = None
         self.merges = []
         self.merge_ranks = {}
         self.token_to_id = {}
         self.id_to_token = {}
+        self.special_tokens = special_tokens
+
 
 
 
@@ -99,7 +101,7 @@ class FastBPETokenizer:
 
         self.merges = merges
         self.merge_ranks = {pair: i for i, pair in enumerate(merges)}
-        self.vocab = tokens.union(set(a + b for a, b in merges))
+        self.vocab = tokens.union(set(self.special_tokens)).union(set(a + b for a, b in merges))
 
         self.token_to_id = {token: idx for idx, token in enumerate(sorted(self.vocab))}
         self.id_to_token = {idx: token for token, idx in self.token_to_id.items()}
@@ -128,7 +130,15 @@ class FastBPETokenizer:
     
     def tokenize_to_ids(self, text):
         tokens = self.tokenize(text)
-        return [self.token_to_id[tok] for tok in tokens if tok in self.token_to_id]
+        ids = []
+        self.token_to_id.get("<bos>", None)  # Ensure <bos> is in vocab
+        for token in tokens:
+            if token in self.token_to_id:
+                ids.append(self.token_to_id[token])
+            else:
+                ids.append(self.token_to_id.get("<unk>", 0))
+        ids.append(self.token_to_id.get("<eos>", 1))  # Add <eos> at the end
+        return ids
     
     def decode_from_ids(self, ids):
         tokens = [self.id_to_token[i] for i in ids]
