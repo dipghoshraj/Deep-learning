@@ -1,0 +1,41 @@
+{
+  "builder_name": "parquet",
+  "citation": "",
+  "config_name": "default",
+  "dataset_name": "custom_text_to_sql_dataset",
+  "dataset_size": 276792400,
+  "description": "",
+  "download_checksums": {
+    "hf://datasets/DipamSoni/custom_text_to_sql_dataset@fa3cc34962e9269359fe0b745c92e7b489be0498/data/train-00000-of-00001.parquet": {
+      "num_bytes": 91308742,
+      "checksum": null
+    }
+  },
+  "download_size": 91308742,
+  "features": {
+    "input_ids": {
+      "feature": {
+        "dtype": "int32",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 368101142,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 276792400,
+      "num_examples": 368059,
+      "dataset_name": "custom_text_to_sql_dataset"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}
