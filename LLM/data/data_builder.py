@@ -15,4 +15,9 @@ class DataLoader:
             raise ValueError("Dataset not loaded. Call load_dataset() first.")
         return self.dataset
     
+    def flatten(self):
+        if self.dataset is None:
+            raise ValueError("Dataset not loaded. Call load_dataset() first.")
+        # self.dataset
+    
 
