@@ -7,3 +7,4 @@ venv
 *.pyc
 tokenized_sql_dataset/data-00000-of-00002.arrow
 tokenized_sql_dataset/data-00001-of-00002.arrow
+tokenized_sql_dataset/flatten_token.npy

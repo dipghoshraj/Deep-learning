@@ -1,30 +1,32 @@
 from datasets import load_from_disk
 import numpy as np
+from tqdm import tqdm
 
 DATASET_PATH = "../tokenized_sql_dataset"
 dataset = load_from_disk(DATASET_PATH)
 
-
-print(f"Dataset loaded from {DATASET_PATH}")
+print(f"🚢 Dataset loading........ from {DATASET_PATH}")
 
 tokenized_array = dataset["input_ids"]
-total_token=  sum([len(i) for i in tokenized_array])
 
-print(f"loaded Total tokens: {total_token}")
+# Add tqdm for progress tracking
+total_token = sum(len(seq) for seq in tqdm(tokenized_array, desc="🔢 Counting tokens", unit="seqs"))
 
-flat_array = np.memmap(f"{DATASET_PATH}/flatten_token.npy", mode='w+', dtype=np.int32, shape=(total_token,))
-print(f"Created memmap at {DATASET_PATH}/flatten_token.npy with shape {flat_array.shape}")
+print(f"🔢 Total tokens: {total_token:,}")
+
+flat_array = np.memmap(
+    f"{DATASET_PATH}/flatten_token.npy", 
+    mode='w+', 
+    dtype=np.int32, 
+    shape=(total_token,)
+)
+print(f"Created memmap with shape: {flat_array.shape}")
 
 index = 0
-for arr in tokenized_array:
-    arr = np.asarray(arr, dtype=np.int32)
-    length = len(arr)
-    flat_array[idx:idx+length] = arr
-    idx += length
-
-    if idx % 1_000_00 == 0:
-        print(f"Processed {idx} tokens...")
-
+for seq in tqdm(tokenized_array, desc="🔥 Flattening", unit="seqs"):
+    length = len(seq)
+    flat_array[index:index+length] = seq
+    index += length
 
 flat_array.flush()
-print(f"✅ Flattened memmap saved to: {DATASET_PATH}")
+print(f" Flattened memmap saved to: {DATASET_PATH}/flatten_token.npy")
