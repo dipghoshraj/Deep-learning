@@ -1,23 +1,24 @@
 from datasets import load_from_disk
-
+import numpy as np
+import torch
 
 class DataLoader:
-    def __init__(self, dataset_path: str):
-        self.dataset_path = dataset_path
-        self.dataset = None
+    def __init__(self, memmap_path: str, block_size: int, dtype = np.int32, start=0, end=None):
+        self.tokens =  np.memmap(memmap_path, dtype=dtype, mode='r')
+        self.block_size = block_size
+        self.total_tokens = len(self.tokens)
 
-    def load_dataset(self):
-        self.dataset = load_from_disk(self.dataset_path)
-        print(f"Dataset loaded from {self.dataset_path}")
+        self.end = len(self.tokens) - block_size if end is None else end
+        self.start = start
+        self.length = self.end - self.start
 
-    def get_dataset(self):
-        if self.dataset is None:
-            raise ValueError("Dataset not loaded. Call load_dataset() first.")
-        return self.dataset
+
+    def __len__(self):
+        return self.length
     
-    def flatten(self):
-        if self.dataset is None:
-            raise ValueError("Dataset not loaded. Call load_dataset() first.")
-        # self.dataset
-    
-
+    def __getitem__(self, idx):
+        idx += self.start
+        block = self.tokens[idx : idx + self.block_size + 1]
+        x = torch.tensor(block[:-1], dtype=torch.long)
+        y = torch.tensor(block[1:], dtype=torch.long)
+        return x, y

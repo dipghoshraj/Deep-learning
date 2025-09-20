@@ -15,7 +15,7 @@ total_token = sum(len(seq) for seq in tqdm(tokenized_array, desc="🔢 Counting 
 print(f"🔢 Total tokens: {total_token:,}")
 
 flat_array = np.memmap(
-    f"{DATASET_PATH}/flatten_token.npy", 
+    f"{DATASET_PATH}/flatten_token.memmap", 
     mode='w+', 
     dtype=np.int32, 
     shape=(total_token,)
@@ -29,4 +29,4 @@ for seq in tqdm(tokenized_array, desc="🔥 Flattening", unit="seqs"):
     index += length
 
 flat_array.flush()
-print(f" Flattened memmap saved to: {DATASET_PATH}/flatten_token.npy")
+print(f" Flattened memmap saved to: {DATASET_PATH}/flatten_token.memmap")
