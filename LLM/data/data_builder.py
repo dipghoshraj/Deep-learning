@@ -17,7 +17,15 @@ class DataLoader:
     
     def __getitem__(self, idx):
         idx += self.start
+        if idx + self.block_size + 1 > self.end:
+            raise IndexError("Index out of bounds.")
         block = self.tokens[idx : idx + self.block_size + 1]
         x = torch.tensor(block[:-1], dtype=torch.long)
         y = torch.tensor(block[1:], dtype=torch.long)
+        return x, y
+    
+
+    def collate_fn(batch):
+        x = torch.stack([item[0] for item in batch])
+        y = torch.stack([item[1] for item in batch])
         return x, y
