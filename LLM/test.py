@@ -12,7 +12,6 @@
 
 
 # # print(tokenizer.tokenize_to_ids(text))
-# ids_decode = [37,7,81,165,171,166,256,252,247,168,7,68,109,244,7,36,240,253,191,254,244,43,36,70,136,254,277,202,264,132,113,247,286,146,264,256,252,247,283,151,254,98,145,16,105,125,225,255,263,199,124,93,191,178,138,129,254,16,105,60,283,103,255,270,132,184,234,119,124,264,82,17,92,289,185,179,109,125,19,52,76,50,226,244,154,9,125,226,249,90,59,66,73,54,57,54,70,15,92,273,260,220,90,59,66,73,54,57,54,70,15,253,120,188,140,254,90,59,66,73,54,57,54,70,15,125,226,249,89,201,102,80,45,70,50,58,45,70,9,22,24,10,15,125,226,249,89,132,153,125,242,230,269,80,45,70,50,58,45,70,9,23,27,27,10,11,41,42,36,38,125,254,145,208,212,254,1593,1593,1593,1593,1593,1593,1593,132,89,125,211,138,136,90,182,15,238,101,136,89,258,12,76,50,58,45,70,15,238,273,164,247,9,1,50,58,54,70,9,92,252,45,59,66,73,70,15,265,125,242,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,1350,254,273,136,18,125,242,230,107,170,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,1014,198,2240,2240,2240,2240,2240,225,225,255,83,230,269,9,240,89,157,191,1983,1983,1983,1983,99,89,201,102,80,45,70,9,125,191,94,36,80,1593,1593]
 
 # print(tokenizer.decode_from_ids(ids_decode))
 
@@ -29,13 +28,26 @@ device = "cpu"
 if torch.cuda.is_available():
   device = "cuda"
 
+from transformers import RobertaTokenizerFast
 
+tokenizer = RobertaTokenizerFast(
+    tokenizer_file="./slm/tokenizer.json",
+    truncation=True,
+    unk_token="<UNK>",
+    pad_token="<PAD>",
+    bos_token="<BOS>",
+    eos_token="<EOS>",
+    max_length=50
+)
 import math
 
 class PositionalEncoding(nn.Module):
     def __init__(self, context_length, d_model):
         super().__init__()
         self.register_buffer("pe", self._build_pe(context_length, d_model))
+        self.dropout = nn.Dropout(0.1)
+
+
 
     def _build_pe(self, length, d_model):
         position = torch.arange(0, length, dtype=torch.float).unsqueeze(1)
@@ -47,7 +59,7 @@ class PositionalEncoding(nn.Module):
 
     def forward(self, x):
         seq_len = x.size(1)
-        return x + self.pe[:, :seq_len, :]
+        return self.dropout(x + self.pe[:, :seq_len, :])
 
 
 class MultiHeadAttention(nn.Module):
@@ -81,7 +93,6 @@ class MultiHeadAttention(nn.Module):
         attn_output = attn_output.transpose(1, 2).contiguous().view(B, T, C)
         return self.fc_out(self.dropout(attn_output))
     
-
 class GPTBlock(nn.Module):
     def __init__(self, d_model, n_heads, dropout=0.1):
         super().__init__()
@@ -143,51 +154,100 @@ class GPT(nn.Module):
             loss = F.cross_entropy(
                 logits.reshape(-1, logits.size(-1)),
                 targets.reshape(-1),
-                ignore_index=-100
+                ignore_index=-100,
+                label_smoothing=0.1
             )
 
         return logits, loss
 
     @torch.no_grad()
-    def generate(self, idx, max_new_tokens):
+    def generate(
+        self,
+        idx,
+        max_new_tokens,
+        top_k=50,
+        top_p=0.9,
+        temperature=1.0,
+        repetition_penalty=1.1
+    ):
         for _ in range(max_new_tokens):
             idx_cond = idx[:, -self.context_length:]
+
             logits, _ = self(idx_cond)
-            probs = F.softmax(logits[:, -1, :], dim=-1)
-            next_token = torch.multinomial(probs, num_samples=1)
+            logits = logits[:, -1, :]  # get logits for last token
+            logits = logits / temperature
+
+            # Repetition penalty
+            for i in range(idx.size(0)):
+                for token in set(idx[i].tolist()):
+                    if token < logits.size(-1):
+                        logits[i, token] /= repetition_penalty
+
+            # Top-k
+            if top_k is not None and top_k > 0:
+                topk_values, _ = torch.topk(logits, top_k)
+                min_vals = topk_values[:, -1].unsqueeze(1)
+                logits = torch.where(logits < min_vals, float('-inf'), logits)
+
+            # Top-p (nucleus)
+            if top_p is not None and 0.0 < top_p < 1.0:
+                sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+                probs = F.softmax(sorted_logits, dim=-1)
+                cum_probs = torch.cumsum(probs, dim=-1)
+
+                sorted_mask = cum_probs > top_p
+                sorted_mask[:, 1:] = sorted_mask[:, :-1].clone()
+                sorted_mask[:, 0] = 0
+
+                masked_sorted_logits = sorted_logits.masked_fill(sorted_mask, float("-inf"))
+                logits = logits.clone()  # clone before in-place scatter_
+                logits.scatter_(1, sorted_indices, masked_sorted_logits)
+
+
+            # Convert to probabilities safely
+            probs = F.softmax(logits, dim=-1)
+            probs = torch.nan_to_num(probs, nan=0.0, posinf=0.0, neginf=0.0)
+
+            probs_sum = probs.sum(dim=-1, keepdim=True)
+            probs_sum[probs_sum == 0] = 1  # avoid divide-by-zero
+            probs = probs / probs_sum
+
+            # Sample
+            try:
+                next_token = torch.multinomial(probs, num_samples=1)
+            except RuntimeError as e:
+                print("Error in multinomial sampling.")
+                print("Probs:", probs)
+                raise e
+
             idx = torch.cat((idx, next_token), dim=1)
+
         return idx
-    
-basic_model = GPT(vocab_size=8000, d_model=256, n_heads=8, n_layers=6, context_length=50).to(device)
+
+
+
+basic_model = GPT(vocab_size=8000, d_model=256, n_heads=8, n_layers=6, context_length=126).to(device)
 basic_model.to(device)
 
-
-
-from transformers import RobertaTokenizerFast
-
-tokenizer = RobertaTokenizerFast(
-    tokenizer_file="./slm/tokenizer.json",
-    truncation=True,
-    unk_token="<UNK>",
-    pad_token="<PAD>",
-    bos_token="<BOS>",
-    eos_token="<EOS>",
-    max_length=50
-)
-
-checkpoint = torch.load("./LLM/checkpoints/slm_epoch_5.pt", map_location=device)
+checkpoint = torch.load("./LLM/checkpoints/slm_epoch_10.pt", map_location=device)
 basic_model.load_state_dict(checkpoint["model_state_dict"])
 basic_model.eval()
 
 
-prompt = "I've been feeling so sad and overwhelmed"
-input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
+prompt = "Filling down lately"
 
-print("Input IDs:", input_ids)
+inputs = tokenizer(prompt, return_tensors='pt', add_special_tokens=True)
+input_ids = inputs["input_ids"].to(device)
+
+# Optional: check if input tokens are valid
+print("Max token ID:", input_ids.max().item())
+print("Vocab size:", tokenizer.vocab_size)
+
 
 # --- Generate ---
 with torch.no_grad():
     output_ids = basic_model.generate(input_ids, max_new_tokens=80)
 
+# Decode
 output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-print("Model output:", output_text)
+print("Generated output:", output_text)
