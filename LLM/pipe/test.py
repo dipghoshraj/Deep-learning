@@ -234,7 +234,7 @@ basic_model.load_state_dict(checkpoint["model_state_dict"])
 basic_model.eval()
 
 
-prompt = "Filling down lately"
+prompt = "Filling"
 
 inputs = tokenizer(prompt, return_tensors='pt', add_special_tokens=True)
 input_ids = inputs["input_ids"].to(device)
