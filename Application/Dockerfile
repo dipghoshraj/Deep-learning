@@ -1,0 +1,33 @@
+FROM python:3.12.9-slim
+
+
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    gcc \
+    g++ \
+    build-essential \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirement.txt .
+
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir -r requirement.txt
+
+RUN apt-get purge -y build-essential gcc g++ \
+ && apt-get autoremove -y \
+ && rm -rf /root/.cache /var/lib/apt/lists/*
+
+
+
+COPY . .
+
+# Expose port
+EXPOSE 5000
+
+# Start the Flask app
+CMD ["python", "application.py"]
