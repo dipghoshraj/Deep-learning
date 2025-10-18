@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Text Generator</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; max-width: 600px; }
+    textarea { width: 100%; height: 100px; }
+    button { padding: 10px 20px; margin-top: 10px; }
+    pre { background: #f4f4f4; padding: 1rem; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Text Generator</h1>
+  <form id="generate-form">
+    <label for="prompt">Enter your prompt:</label><br />
+    <textarea id="prompt" name="prompt" required></textarea><br />
+    <button type="submit">Generate</button>
+  </form>
+
+  <h2>Response:</h2>
+  <pre id="response"></pre>
+
+  <script>
+    const form = document.getElementById('generate-form');
+    const responseBox = document.getElementById('response');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      responseBox.textContent = 'Loading...';
+
+      const prompt = document.getElementById('prompt').value;
+
+      try {
+        const res = await fetch('/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input_text: prompt, max_new_tokens: 100 }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          responseBox.textContent = 'Error: ' + (err.error || 'Unknown error');
+          return;
+        }
+
+        const data = await res.json();
+        responseBox.textContent = data.generated_text;
+      } catch (error) {
+        responseBox.textContent = 'Request failed: ' + error.message;
+      }
+    });
+  </script>
+</body>
+</html>
