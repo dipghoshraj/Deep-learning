@@ -1,6 +1,7 @@
 import heapq
 from collections import defaultdict, Counter
 import json, os
+from tqdm import tqdm
 
 class FastBPETokenizer:
     def __init__(self, special_tokens=["<pad>", "<unk>", "<bos>", "<eos>"]):
@@ -76,28 +77,25 @@ class FastBPETokenizer:
         max_merges = vocab_size - len(tokens)
         print(f"Target vocab size={vocab_size}, initial={len(tokens)}, max merges={max_merges}")
 
-        for i in range(max_merges):
-            # Pop the most frequent pair
+        for i in tqdm(range(max_merges), desc="Merging BPE pairs", unit="merge"):
             if not heap:
                 break
             freq, pair = heapq.heappop(heap)
             freq = -freq
 
-            # If frequency is stale (doesn't match vocab anymore), skip
             if pair not in pair_stats or pair_stats[pair] != freq:
                 continue
 
-            # Merge vocab
             vocab = self.merge_vocab(pair, vocab)
             merges.append(pair)
 
-            # Update pair stats incrementally
             pair_stats = self.get_pair_stats(vocab)
             for p, f in pair_stats.items():
                 heapq.heappush(heap, (-f, p))
 
-            if i % 100 == 0:
-                print(f"Merge {i}: {pair} ({freq})")
+    # Optionally still print every 100 steps
+    if i % 100 == 0:
+        tqdm.write(f"Merge {i}: {pair} ({freq})")
 
         self.merges = merges
         self.merge_ranks = {pair: i for i, pair in enumerate(merges)}

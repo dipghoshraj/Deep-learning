@@ -11,3 +11,6 @@ tokenized_sql_dataset/data-00001-of-00002.arrow
 tokenized_sql_dataset/flatten_token.memmap
 */checkpoints/*
 */models/*
+
+*.dev.txt
+*.tokenizer.json
