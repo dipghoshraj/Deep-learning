@@ -14,3 +14,4 @@ tokenized_sql_dataset/flatten_token.memmap
 
 *.dev.txt
 *.tokenizer.json
+*.pt
