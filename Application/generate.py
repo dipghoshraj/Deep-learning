@@ -1,4 +1,4 @@
-from pymodel import GPT
+from pymodel import DecoderGPT
 import torch
 
 
@@ -8,16 +8,16 @@ from transformers import PreTrainedTokenizerFast
 tok = PreTrainedTokenizerFast(tokenizer_file=TOKENIZER_PATH)
 vocab_size = tok.vocab_size
 
-d_model = context_length= 512
-n_heads = 4
-n_layers = 2
+d_model = context_length= 256
+n_heads = 2
+n_layers = 4
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class Slm:
     def __init__(self):
-        self.m = GPT(vocab_size=vocab_size, d_model=d_model, n_heads=n_heads, n_layers=n_layers, context_length=context_length).to(device)
+        self.m = DecoderGPT(vocab_size=vocab_size, d_model=d_model, n_heads=n_heads, n_layers=n_layers, context_length=context_length, dropout=0.05).to(device)
         checkpoint = torch.load("model/best_model.pt", map_location="cuda" if torch.cuda.is_available() else "cpu")
         self.m.load_state_dict(checkpoint['model_state_dict'])
 
