@@ -17,7 +17,7 @@ def index():
 def generate_text():
     data = request.json
     input_text = data.get('input_text', '')
-    max_new_tokens = data.get('max_new_tokens', 100)
+    max_new_tokens = data.get('max_new_tokens', 40)
 
     generated_text = slm.generate(input_text, max_new_tokens=max_new_tokens)
     return jsonify({'generated_text': generated_text})

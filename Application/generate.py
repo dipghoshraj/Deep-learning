@@ -22,7 +22,7 @@ class Slm:
         self.m.load_state_dict(checkpoint['model_state_dict'])
 
 
-    def generate(self, input_text, max_new_tokens=100):
+    def generate(self, input_text, max_new_tokens=40):
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
 

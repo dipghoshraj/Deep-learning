@@ -35,7 +35,7 @@
         const res = await fetch('/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input_text: prompt, max_new_tokens: 100 }),
+          body: JSON.stringify({ input_text: prompt, max_new_tokens: 40 }),
         });
 
         if (!res.ok) {
