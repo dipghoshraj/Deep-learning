@@ -28,3 +28,13 @@ class PositionalEncoding(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Add the positional encodings to the input embeddings
         return x + self.pe[:, : x.size(1), :]
+    
+
+class LearnedPositionalEncoding(nn.Module):
+    def __init__(self, context_length, d_model):
+        super().__init__()
+        self.pe = nn.Embedding(context_length, d_model)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        positions = torch.arange(0, x.size(1), device=x.device).unsqueeze(0)  # (1, seq_len)
+        return x + self.pe(positions)
